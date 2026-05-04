@@ -8,65 +8,55 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Roboto:wght@300;700&display=swap');
-        :root { --f1-red: #e10600; --dark-bg: #0a0a0f; --card-bg: #16161d; }
+        :root { --f1-red: #e10600; --dark-bg: #15151e; --card-bg: #1f1f27; }
         
         body { background-color: var(--dark-bg); color: white; font-family: 'Roboto', sans-serif; margin: 0; padding: 20px; text-align: center; overflow-x: hidden;}
         
-        #logo-container { position: fixed; top: 15px; right: 20px; width: 80px; height: 80px; z-index: 100; display: flex; align-items: center; justify-content: center; border: 2px dashed #444; border-radius: 8px; font-size: 0.6rem; color: #666; }
-        #logo-container img { max-width: 100%; max-height: 100%; border-radius: 8px; }
+        /* Logo Placeholder */
+        #logo-container { position: fixed; top: 15px; right: 20px; width: 60px; height: 60px; z-index: 100; border: 1px dashed #444; display: flex; align-items: center; justify-content: center; font-size: 0.5rem; }
 
-        #admin-lock-icon { position: fixed; top: 15px; left: 15px; cursor: pointer; z-index: 100; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        #admin-lock-icon { position: fixed; top: 15px; left: 15px; cursor: pointer; z-index: 100; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
 
-        h1 { font-family: 'Orbitron', sans-serif; text-transform: uppercase; letter-spacing: 5px; border-bottom: 4px solid var(--f1-red); padding-bottom: 10px; margin-bottom: 30px; text-shadow: 0 0 10px var(--f1-red); }
+        h1 { font-family: 'Orbitron', sans-serif; text-transform: uppercase; letter-spacing: 5px; border-bottom: 4px solid var(--f1-red); padding-bottom: 10px; margin-bottom: 30px; }
         
-        .leaderboard-container { max-width: 850px; margin: 0 auto; padding-bottom: 100px; }
+        .leaderboard-container { max-width: 800px; margin: 0 auto; padding-bottom: 100px; }
 
-        .row { display: flex; align-items: center; background: var(--card-bg); margin-bottom: 12px; padding: 15px; border-left: 10px solid var(--f1-red); transform: skew(-10deg); transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
+        .row { display: flex; align-items: center; background: var(--card-bg); margin-bottom: 12px; padding: 15px; border-left: 10px solid var(--f1-red); transform: skew(-10deg); transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
         .row:first-child { border-left-color: #ffd700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
-        
-        /* ENLARGE WINNER HIGHLIGHT */
-        .winner-active { transform: skew(-10deg) scale(1.1); z-index: 10; border: 3px solid gold; box-shadow: 0 0 30px gold; margin: 25px 0; border-left-color: gold; }
-
         .content { transform: skew(10deg); display: flex; width: 100%; justify-content: space-between; align-items: center; }
 
         .rank { width: 50px; font-size: 1.8rem; font-weight: 900; color: var(--f1-red); }
-        .name { flex-grow: 1; font-size: 1.4rem; font-weight: 900; text-transform: uppercase; text-align: left; margin-left: 20px; font-family: 'Orbitron'; }
+        .name { flex-grow: 1; font-size: 1.3rem; font-weight: 700; text-transform: uppercase; text-align: left; margin-left: 20px; }
         
-        .name-red { color: #ff3131; text-shadow: 0 0 10px #ff3131; }
-        .name-blue { color: #00d2ff; text-shadow: 0 0 10px #00d2ff; }
-        .name-green { color: #39ff14; text-shadow: 0 0 10px #39ff14; }
-        .name-yellow { color: #fff01f; text-shadow: 0 0 10px #fff01f; }
+        .name-red { color: #ff4d4d; } .name-blue { color: #4d94ff; } .name-green { color: #52ff4d; } .name-yellow { color: #ffff4d; }
 
-        .stat-box { background: #22222b; padding: 8px 15px; border-radius: 5px; min-width: 75px; margin-left: 10px; border: 1px solid #333; }
-        .label { font-size: 0.7rem; color: #ccc; text-transform: uppercase; display: block; }
-        .value { font-size: 1.3rem; font-weight: 900; font-family: 'Orbitron'; color: #fff; }
+        .stat-group { display: flex; gap: 15px; }
+        .stat-box { background: #2b2b35; padding: 8px 15px; border-radius: 5px; min-width: 70px; }
+        .label { font-size: 0.7rem; color: #aaa; text-transform: uppercase; display: block; }
+        .value { font-size: 1.2rem; font-weight: 900; font-family: 'Orbitron'; }
 
-        .winner-badge { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); background: gold; color: black; font-weight: 900; padding: 4px 25px; border-radius: 20px; font-family: 'Orbitron'; font-size: 0.9rem; letter-spacing: 2px; box-shadow: 0 0 15px gold; z-index: 15; }
+        .winner-badge { position: absolute; top: -10px; right: 10px; background: gold; color: black; font-weight: 900; font-size: 0.7rem; padding: 2px 10px; border-radius: 5px; transform: skew(10deg); font-family: 'Orbitron'; box-shadow: 0 0 10px gold; }
 
         /* ADMIN PANEL */
-        #admin-section { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0a0a0f; z-index: 200; overflow-y: auto; padding: 20px; box-sizing: border-box; }
-        .sort-options { background: #1c1c24; padding: 15px; margin-bottom: 20px; border-radius: 10px; display: flex; justify-content: center; gap: 10px; border: 1px solid #444; }
-        .admin-row { background: #16161d; margin-bottom: 10px; padding: 15px; border-radius: 8px; border: 1px solid #333; max-width: 900px; margin-inline: auto; display: flex; flex-direction: column; gap: 8px; }
+        #admin-section { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #15151e; z-index: 200; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+        .sort-options { background: #2b2b35; padding: 15px; margin-bottom: 20px; border-radius: 8px; display: flex; justify-content: center; gap: 10px; }
+        .admin-row { background: #1f1f27; margin-bottom: 10px; padding: 15px; border-radius: 8px; border: 1px solid #333; max-width: 900px; margin-inline: auto; display: flex; flex-direction: column; gap: 10px; }
         .admin-info { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 8px; }
         
         button { padding: 10px 14px; background: var(--f1-red); border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 6px; text-transform: uppercase; font-size: 0.75rem; }
-        .btn-active { background: gold; color: black; box-shadow: 0 0 10px gold; }
+        .btn-active { background: gold; color: black; border: 2px solid white; }
         .btn-neg { background: #444; } .btn-win { background: gold; color: black; }
     </style>
 </head>
 <body>
 
-    <div id="admin-lock-icon" onclick="checkPassword()">⚙️</div>
-
-    <div id="logo-container">
-        <img src="logo.png" alt="LOGO" onerror="this.style.display='none'">
-        <span>PLACE LOGO</span>
-    </div>
+    <div id="admin-lock-icon" onclick="checkPassword()">🔒</div>
+    <div id="logo-container">LOGO HERE</div>
 
     <h1>F1 RC LIVE SCOREBOARD</h1>
 
     <div class="leaderboard-container" id="leaderboard">
-        <p>Syncing Race Data...</p>
+        <p>Syncing Data...</p>
     </div>
 
     <!-- ADMIN PANEL -->
@@ -74,15 +64,13 @@
         <h2 style="font-family: Orbitron; color: var(--f1-red);">RACE CONTROL</h2>
         <button class="btn-neg" onclick="document.getElementById('admin-section').style.display='none'" style="margin-bottom:20px;">← EXIT ADMIN</button>
         
-        <!-- Sort selection buttons for main page leaderboard -->
         <div class="sort-options">
-            <span style="font-weight:bold; margin-right:10px; line-height: 2.5;">MAIN PAGE SORT:</span>
-            <button id="sort-both" class="btn-active" onclick="setSort('both')">Auto (P+L)</button>
+            <span style="font-weight:bold; margin-right:10px; line-height: 2.5;">SORT MAIN PAGE BY:</span>
+            <button id="sort-both" class="btn-active" onclick="setSort('both')">Both (Default)</button>
             <button id="sort-points" onclick="setSort('points')">Points</button>
             <button id="sort-laps" onclick="setSort('laps')">Laps</button>
         </div>
 
-        <!-- Admin List stays Alphabetical for easy data entry -->
         <div id="admin-list"></div>
         
         <div style="margin-top: 30px; padding: 20px; border-top: 2px solid #333;">
@@ -141,16 +129,15 @@
                 return b.points !== a.points ? b.points - a.points : b.laps - a.laps;
             });
 
-            // ADMIN LIST: Fixed Alphabetical for easy data entry
+            // ADMIN LIST: Alphabetical for easy data entry
             const adminCars = [...allCars].sort((a,b) => a.house_name.localeCompare(b.house_name));
 
             sortedCars.forEach((car, i) => {
                 const color = getColorClass(car.house_name);
-                const winLabel = car.isWinner ? `<div class="winner-badge">👑 WINNER: ${car.house_name} 👑</div>` : '';
-                const winnerClass = car.isWinner ? 'winner-active' : '';
+                const winLabel = car.isWinner ? `<div class="winner-badge">CHAMPION</div>` : '';
 
                 board.innerHTML += `
-                    <div class="row ${winnerClass}">
+                    <div class="row">
                         ${winLabel}
                         <div class="content">
                             <div class="rank">P${i+1}</div>
@@ -171,10 +158,10 @@
                             <span class="${color}"><b>${car.house_name}</b></span>
                             <span>L: <b>${car.laps}</b> | P: <b>${car.points}</b></span>
                         </div>
-                        <div style="display:flex; gap:5px; justify-content:center; flex-wrap: wrap;">
+                        <div class="admin-btns">
                             <button onclick="upd('${car.id}','laps',${car.laps+1})">+ L</button>
                             <button class="btn-neg" onclick="upd('${car.id}','laps',${car.laps-1})">- L</button>
-                            <button onclick="upd('${car.id}','points',${car.points+10})">+ 10 P</button>
+                            <button onclick="upd('${car.id}','points',${car.points+10})">+ 10</button>
                             <button class="btn-win" onclick="win('${car.id}', '${car.house_name}')">🏆 WIN</button>
                             <button style="background:#b00" onclick="del('${car.id}')">DEL</button>
                         </div>
