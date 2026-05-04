@@ -12,7 +12,7 @@
         
         body { background-color: var(--dark-bg); color: white; font-family: 'Roboto', sans-serif; margin: 0; padding: 20px; text-align: center; }
         
-        /* Admin Icon in Top Left */
+        /* Admin Icon Top Left */
         #admin-lock-icon {
             position: fixed; top: 15px; left: 15px; cursor: pointer; z-index: 100;
             background: rgba(255,255,255,0.1); padding: 8px; border-radius: 50%; width: 30px; height: 30px;
@@ -48,24 +48,25 @@
         .label { font-size: 0.7rem; color: #aaa; text-transform: uppercase; display: block; }
         .value { font-size: 1.2rem; font-weight: 900; font-family: 'Orbitron'; }
 
-        /* Admin Section Hidden by Default */
+        /* Admin Section */
         #admin-section {
-            display: none; margin-top: 40px; padding: 20px; background: #1a1a24; border-radius: 12px; 
-            border: 1px dashed var(--f1-red); max-width: 800px; margin-inline: auto;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #15151e; z-index: 200; overflow-y: auto; padding: 20px; box-sizing: border-box;
         }
 
-        .admin-controls { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #333; align-items: center; }
+        .admin-controls { display: flex; justify-content: space-between; padding: 15px; border-bottom: 1px solid #333; align-items: center; max-width: 800px; margin: 0 auto; }
         
-        .add-team-box { margin-top: 20px; padding-top: 20px; border-top: 2px solid #333; }
-        input { padding: 10px; border-radius: 5px; border: none; margin-bottom: 10px; }
+        .admin-footer { margin-top: 30px; padding: 20px; border-top: 2px solid #333; display: flex; flex-direction: column; gap: 15px; align-items: center; }
+        input { padding: 12px; border-radius: 5px; border: none; width: 250px; }
 
-        button { padding: 10px 15px; background: var(--f1-red); border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 5px; margin: 2px; }
+        button { padding: 12px 18px; background: var(--f1-red); border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 6px; margin: 3px; text-transform: uppercase; }
+        .btn-secondary { background: #444; }
+        .btn-reset { background: #ff9800; }
         button:active { transform: scale(0.9); }
     </style>
 </head>
 <body>
 
-    <!-- Icon Placeholder (You can replace '🔒' with your <img> tag later) -->
     <div id="admin-lock-icon" onclick="checkPassword()">🔒</div>
 
     <h1>F1 RC LIVE SCOREBOARD</h1>
@@ -74,20 +75,23 @@
         <p>Syncing with Track...</p>
     </div>
 
-    <!-- Hidden Admin Panel -->
+    <!-- Full Screen Admin Panel -->
     <div id="admin-section">
-        <h2 style="font-family: Orbitron; font-size: 1rem; color: var(--f1-red);">RACE CONTROL (LOCKED)</h2>
+        <h2 style="font-family: Orbitron; color: var(--f1-red);">RACE CONTROL</h2>
+        <button class="btn-secondary" onclick="closeAdmin()">← BACK TO SCOREBOARD</button>
+        
         <div id="admin-list"></div>
         
-        <div class="add-team-box">
-            <h3>Add New Team</h3>
-            <input type="text" id="newTeamName" placeholder="Enter Team Name">
-            <button onclick="addNewTeam()">Add Team</button>
+        <div class="admin-footer">
+            <div>
+                <input type="text" id="newTeamName" placeholder="New Team Name">
+                <button onclick="addNewTeam()">Add Team</button>
+            </div>
+            <button class="btn-reset" onclick="resetAllScores()">⚠️ RESET ALL SCORES</button>
         </div>
     </div>
 
     <script>
-        // 1. CONFIGURATION
         const firebaseConfig = {
             apiKey: "AIzaSyD8RwbZzEvpqWgrk2VKSj1XQAgrRQ-oieg",
             authDomain: "fone-7f6e5.firebaseapp.com",
@@ -101,48 +105,49 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // 2. PASSWORD PROTECTION
         function checkPassword() {
             const pass = prompt("Enter Race Control Password:");
             if (pass === "CBS@2026") {
                 document.getElementById('admin-section').style.display = "block";
-                window.scrollTo(0, document.body.scrollHeight);
             } else {
-                alert("Incorrect Access Key!");
+                alert("Access Denied!");
             }
         }
 
-        // 3. COLOR LOGIC
+        function closeAdmin() {
+            document.getElementById('admin-section').style.display = "none";
+        }
+
         function getColorClass(name) {
-            const lower = name.toLowerCase();
-            if (lower.includes('red')) return 'name-red';
-            if (lower.includes('blue')) return 'name-blue';
-            if (lower.includes('green')) return 'name-green';
-            if (lower.includes('yellow')) return 'name-yellow';
+            const n = name.toLowerCase();
+            if (n.includes('red')) return 'name-red';
+            if (n.includes('blue')) return 'name-blue';
+            if (n.includes('green')) return 'name-green';
+            if (n.includes('yellow')) return 'name-yellow';
             return '';
         }
 
-        // 4. DATA LISTENER
         db.ref('scores').on('value', (snapshot) => {
             const data = snapshot.val();
             if (!data) return;
             renderUI(data);
         });
 
-        // 5. RENDER UI
         function renderUI(dataObject) {
             const board = document.getElementById('leaderboard');
             const list = document.getElementById('admin-list');
             board.innerHTML = '';
             list.innerHTML = '';
 
-            // CRITICAL: Sort by points (highest first)
-            const cars = Object.values(dataObject).sort((a, b) => b.points - a.points);
+            // SORTING LOGIC: 1. Highest Points, 2. Highest Laps (Tie-breaker)
+            const cars = Object.values(dataObject).sort((a, b) => {
+                if (b.points !== a.points) return b.points - a.points;
+                return b.laps - a.laps; 
+            });
 
             cars.forEach((car, i) => {
                 const colorClass = getColorClass(car.house_name);
 
-                // Leaderboard
                 board.innerHTML += `
                     <div class="row">
                         <div class="content">
@@ -155,20 +160,18 @@
                         </div>
                     </div>`;
 
-                // Admin
                 list.innerHTML += `
                     <div class="admin-controls">
-                        <span class="${colorClass}">${car.house_name}</span>
+                        <span class="${colorClass}"><b>${car.house_name}</b></span>
                         <div>
                             <button onclick="updateVal('${car.id}', 'laps', ${car.laps + 1})">+ Lap</button>
-                            <button onclick="updateVal('${car.id}', 'points', ${car.points + 10})">+ 10 Pts</button>
-                            <button style="background:#444" onclick="updateVal('${car.id}', 'points', ${car.points - 5})">- 5</button>
+                            <button onclick="updateVal('${car.id}', 'points', ${car.points + 10})">+ 10 P</button>
+                            <button class="btn-secondary" onclick="updateVal('${car.id}', 'points', ${car.points - 5})">- 5</button>
                         </div>
                     </div>`;
             });
         }
 
-        // 6. FUNCTIONS
         window.updateVal = function(id, key, val) {
             db.ref('scores/' + id).update({ [key]: val });
         };
@@ -177,13 +180,22 @@
             const name = document.getElementById('newTeamName').value;
             if (!name) return;
             const newId = "team_" + Date.now();
-            db.ref('scores/' + newId).set({
-                id: newId,
-                house_name: name,
-                laps: 0,
-                points: 0
-            });
+            db.ref('scores/' + newId).set({ id: newId, house_name: name, laps: 0, points: 0 });
             document.getElementById('newTeamName').value = '';
+        };
+
+        window.resetAllScores = function() {
+            if (confirm("ARE YOU SURE? This will set all Laps and Points to 0 for every team!")) {
+                db.ref('scores').once('value', (snapshot) => {
+                    const updates = {};
+                    snapshot.forEach((child) => {
+                        updates[child.key + '/laps'] = 0;
+                        updates[child.key + '/points'] = 0;
+                    });
+                    db.ref('scores').update(updates);
+                    alert("Race has been reset!");
+                });
+            }
         };
     </script>
 </body>
