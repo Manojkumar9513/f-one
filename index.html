@@ -4,41 +4,90 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>F1 RC LIVE SCOREBOARD</title>
-    <!-- Firebase SDKs (Compat version for high stability in single files) -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Roboto:wght@300;700&display=swap');
         :root { --f1-red: #e10600; --dark-bg: #15151e; --card-bg: #1f1f27; }
+        
         body { background-color: var(--dark-bg); color: white; font-family: 'Roboto', sans-serif; margin: 0; padding: 20px; text-align: center; }
+        
+        /* Admin Icon in Top Left */
+        #admin-lock-icon {
+            position: fixed; top: 15px; left: 15px; cursor: pointer; z-index: 100;
+            background: rgba(255,255,255,0.1); padding: 8px; border-radius: 50%; width: 30px; height: 30px;
+            display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+        }
+
         h1 { font-family: 'Orbitron', sans-serif; text-transform: uppercase; letter-spacing: 5px; border-bottom: 4px solid var(--f1-red); padding-bottom: 10px; margin-bottom: 30px; }
-        .row { display: flex; align-items: center; background: var(--card-bg); margin-bottom: 12px; padding: 15px; border-left: 10px solid var(--f1-red); transform: skew(-10deg); transition: 0.5s ease; }
+        
+        .leaderboard-container { max-width: 800px; margin: 0 auto; }
+
+        /* Animation for Position Changing */
+        .row { 
+            display: flex; align-items: center; background: var(--card-bg); margin-bottom: 12px; padding: 15px; 
+            border-left: 10px solid var(--f1-red); transform: skew(-10deg); 
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+
         .row:first-child { border-left-color: #ffd700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
+
         .content { transform: skew(10deg); display: flex; width: 100%; justify-content: space-between; align-items: center; }
-        .rank { width: 50px; font-size: 1.5rem; font-weight: 900; color: var(--f1-red); }
-        .name { flex-grow: 1; font-size: 1.2rem; font-weight: 700; text-align: left; margin-left: 15px; }
-        .stat-box { background: #2b2b35; padding: 5px 15px; border-radius: 5px; margin-left: 10px; min-width: 65px; }
-        .label { font-size: 0.6rem; color: #aaa; text-transform: uppercase; display: block; }
-        #admin-section { margin-top: 60px; padding: 20px; background: #1a1a24; border-radius: 12px; border: 1px dashed #444; max-width: 800px; margin-left: auto; margin-right: auto; }
-        .admin-controls { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #333; align-items: center; }
-        button { padding: 12px 18px; background: var(--f1-red); border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 6px; text-transform: uppercase; font-size: 0.8rem; }
+
+        .rank { width: 50px; font-size: 1.8rem; font-weight: 900; color: var(--f1-red); }
+        .name { flex-grow: 1; font-size: 1.3rem; font-weight: 700; text-transform: uppercase; text-align: left; margin-left: 20px; }
+        
+        /* HOUSE COLORS */
+        .name-red { color: #ff4d4d; }
+        .name-blue { color: #4d94ff; }
+        .name-green { color: #52ff4d; }
+        .name-yellow { color: #ffff4d; }
+
+        .stat-group { display: flex; gap: 15px; }
+        .stat-box { background: #2b2b35; padding: 8px 15px; border-radius: 5px; min-width: 70px; }
+        .label { font-size: 0.7rem; color: #aaa; text-transform: uppercase; display: block; }
+        .value { font-size: 1.2rem; font-weight: 900; font-family: 'Orbitron'; }
+
+        /* Admin Section Hidden by Default */
+        #admin-section {
+            display: none; margin-top: 40px; padding: 20px; background: #1a1a24; border-radius: 12px; 
+            border: 1px dashed var(--f1-red); max-width: 800px; margin-inline: auto;
+        }
+
+        .admin-controls { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #333; align-items: center; }
+        
+        .add-team-box { margin-top: 20px; padding-top: 20px; border-top: 2px solid #333; }
+        input { padding: 10px; border-radius: 5px; border: none; margin-bottom: 10px; }
+
+        button { padding: 10px 15px; background: var(--f1-red); border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 5px; margin: 2px; }
         button:active { transform: scale(0.9); }
     </style>
 </head>
 <body>
 
+    <!-- Icon Placeholder (You can replace '🔒' with your <img> tag later) -->
+    <div id="admin-lock-icon" onclick="checkPassword()">🔒</div>
+
     <h1>F1 RC LIVE SCOREBOARD</h1>
-    <div id="leaderboard">
-        <p>Connecting to Pit Wall...</p>
+
+    <div class="leaderboard-container" id="leaderboard">
+        <p>Syncing with Track...</p>
     </div>
 
+    <!-- Hidden Admin Panel -->
     <div id="admin-section">
-        <h2 style="font-family: Orbitron; font-size: 0.9rem; color: #aaa;">RACE CONTROL (Phone Update)</h2>
+        <h2 style="font-family: Orbitron; font-size: 1rem; color: var(--f1-red);">RACE CONTROL (LOCKED)</h2>
         <div id="admin-list"></div>
+        
+        <div class="add-team-box">
+            <h3>Add New Team</h3>
+            <input type="text" id="newTeamName" placeholder="Enter Team Name">
+            <button onclick="addNewTeam()">Add Team</button>
+        </div>
     </div>
 
     <script>
-        // Data from your screenshot
+        // 1. CONFIGURATION
         const firebaseConfig = {
             apiKey: "AIzaSyD8RwbZzEvpqWgrk2VKSj1XQAgrRQ-oieg",
             authDomain: "fone-7f6e5.firebaseapp.com",
@@ -46,68 +95,95 @@
             projectId: "fone-7f6e5",
             storageBucket: "fone-7f6e5.firebasestorage.app",
             messagingSenderId: "540549386700",
-            appId: "1:540549386700:web:59ebec898bd2e13f6c4d69",
-            measurementId: "G-83VSY2CB1P"
+            appId: "1:540549386700:web:59ebec898bd2e13f6c4d69"
         };
 
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // 1. DATA LISTENER & INITIALIZER
+        // 2. PASSWORD PROTECTION
+        function checkPassword() {
+            const pass = prompt("Enter Race Control Password:");
+            if (pass === "CBS@2026") {
+                document.getElementById('admin-section').style.display = "block";
+                window.scrollTo(0, document.body.scrollHeight);
+            } else {
+                alert("Incorrect Access Key!");
+            }
+        }
+
+        // 3. COLOR LOGIC
+        function getColorClass(name) {
+            const lower = name.toLowerCase();
+            if (lower.includes('red')) return 'name-red';
+            if (lower.includes('blue')) return 'name-blue';
+            if (lower.includes('green')) return 'name-green';
+            if (lower.includes('yellow')) return 'name-yellow';
+            return '';
+        }
+
+        // 4. DATA LISTENER
         db.ref('scores').on('value', (snapshot) => {
             const data = snapshot.val();
-            
-            if (!data) {
-                console.log("Empty DB! Initializing houses...");
-                db.ref('scores').set({
-                    "car1": { id: "car1", house_name: "Red House", laps: 0, points: 0 },
-                    "car2": { id: "car2", house_name: "Blue House", laps: 0, points: 0 },
-                    "car3": { id: "car3", house_name: "Green House", laps: 0, points: 0 },
-                    "car4": { id: "car4", house_name: "Yellow House", laps: 0, points: 0 }
-                });
-                return;
-            }
+            if (!data) return;
             renderUI(data);
         });
 
-        // 2. RENDER THE INTERFACE
+        // 5. RENDER UI
         function renderUI(dataObject) {
             const board = document.getElementById('leaderboard');
             const list = document.getElementById('admin-list');
             board.innerHTML = '';
             list.innerHTML = '';
 
-            // Sort cars by points so the leader is always at the top
+            // CRITICAL: Sort by points (highest first)
             const cars = Object.values(dataObject).sort((a, b) => b.points - a.points);
 
             cars.forEach((car, i) => {
-                // Public Scoreboard
+                const colorClass = getColorClass(car.house_name);
+
+                // Leaderboard
                 board.innerHTML += `
                     <div class="row">
                         <div class="content">
-                            <div class="rank">P${i+1}</div>
-                            <div class="name">${car.house_name}</div>
-                            <div class="stat-box"><span class="label">Laps</span><b>${car.laps}</b></div>
-                            <div class="stat-box"><span class="label">Points</span><b>${car.points}</b></div>
+                            <div class="rank">P${i + 1}</div>
+                            <div class="name ${colorClass}">${car.house_name}</div>
+                            <div class="stat-group">
+                                <div class="stat-box"><span class="label">Laps</span><span class="value">${car.laps}</span></div>
+                                <div class="stat-box"><span class="label">Points</span><span class="value">${car.points}</span></div>
+                            </div>
                         </div>
                     </div>`;
 
-                // Admin Controls
+                // Admin
                 list.innerHTML += `
                     <div class="admin-controls">
-                        <span style="font-weight:bold;">${car.house_name}</span>
+                        <span class="${colorClass}">${car.house_name}</span>
                         <div>
                             <button onclick="updateVal('${car.id}', 'laps', ${car.laps + 1})">+ Lap</button>
                             <button onclick="updateVal('${car.id}', 'points', ${car.points + 10})">+ 10 Pts</button>
+                            <button style="background:#444" onclick="updateVal('${car.id}', 'points', ${car.points - 5})">- 5</button>
                         </div>
                     </div>`;
             });
         }
 
-        // 3. LIVE UPDATE FUNCTION
-        window.updateVal = function(carId, field, newValue) {
-            db.ref('scores/' + carId).update({ [field]: newValue });
+        // 6. FUNCTIONS
+        window.updateVal = function(id, key, val) {
+            db.ref('scores/' + id).update({ [key]: val });
+        };
+
+        window.addNewTeam = function() {
+            const name = document.getElementById('newTeamName').value;
+            if (!name) return;
+            const newId = "team_" + Date.now();
+            db.ref('scores/' + newId).set({
+                id: newId,
+                house_name: name,
+                laps: 0,
+                points: 0
+            });
+            document.getElementById('newTeamName').value = '';
         };
     </script>
 </body>
