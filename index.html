@@ -8,84 +8,82 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Roboto:wght@300;700&display=swap');
-        :root { --f1-red: #e10600; --dark-bg: #0a0a0f; --card-bg: #16161d; }
+        :root { --f1-red: #e10600; --dark-bg: #15151e; --card-bg: #1f1f27; }
         
         body { background-color: var(--dark-bg); color: white; font-family: 'Roboto', sans-serif; margin: 0; padding: 20px; text-align: center; overflow-x: hidden;}
         
-        #admin-lock-icon { position: fixed; top: 15px; left: 15px; cursor: pointer; z-index: 100; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        #admin-lock-icon { position: fixed; top: 15px; left: 15px; cursor: pointer; z-index: 100; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
 
-        h1 { font-family: 'Orbitron', sans-serif; text-transform: uppercase; letter-spacing: 5px; border-bottom: 4px solid var(--f1-red); padding-bottom: 10px; margin-bottom: 30px; color: #fff; text-shadow: 0 0 10px var(--f1-red); }
+        h1 { font-family: 'Orbitron', sans-serif; text-transform: uppercase; letter-spacing: 5px; border-bottom: 4px solid var(--f1-red); padding-bottom: 10px; margin-bottom: 30px; }
         
-        .leaderboard-container { max-width: 850px; margin: 0 auto; padding-bottom: 120px; }
+        .leaderboard-container { max-width: 800px; margin: 0 auto; padding-bottom: 100px; }
 
-        /* Rows with Smooth Transitions */
-        .row { display: flex; align-items: center; background: var(--card-bg); margin-bottom: 12px; padding: 15px; border-left: 10px solid var(--f1-red); transform: skew(-10deg); transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
-        
-        /* THE WINNER ENLARGEMENT */
-        .row.winner-row { transform: skew(-10deg) scale(1.1); margin-top: 20px; margin-bottom: 30px; border: 3px solid gold; box-shadow: 0 0 30px gold; z-index: 10; border-left-color: gold; }
-
+        .row { display: flex; align-items: center; background: var(--card-bg); margin-bottom: 12px; padding: 15px; border-left: 10px solid var(--f1-red); transform: skew(-10deg); transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
+        .row:first-child { border-left-color: #ffd700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
         .content { transform: skew(10deg); display: flex; width: 100%; justify-content: space-between; align-items: center; }
 
         .rank { width: 50px; font-size: 1.8rem; font-weight: 900; color: var(--f1-red); }
+        .name { flex-grow: 1; font-size: 1.3rem; font-weight: 700; text-transform: uppercase; text-align: left; margin-left: 20px; }
         
-        /* NEON POPPING COLORS */
-        .name { flex-grow: 1; font-size: 1.4rem; font-weight: 900; text-transform: uppercase; text-align: left; margin-left: 20px; font-family: 'Orbitron'; }
-        .name-red { color: #ff3131; text-shadow: 0 0 10px #ff3131; }
-        .name-blue { color: #00d2ff; text-shadow: 0 0 10px #00d2ff; }
-        .name-green { color: #39ff14; text-shadow: 0 0 10px #39ff14; }
-        .name-yellow { color: #fff01f; text-shadow: 0 0 10px #fff01f; }
+        .name-red { color: #ff4d4d; } .name-blue { color: #4d94ff; } .name-green { color: #52ff4d; } .name-yellow { color: #ffff4d; }
 
-        .stat-box { background: #22222b; padding: 8px 15px; border-radius: 5px; min-width: 75px; margin-left: 10px; border: 1px solid #333; }
-        .label { font-size: 0.7rem; color: #ccc; text-transform: uppercase; display: block; }
-        .value { font-size: 1.3rem; font-weight: 900; font-family: 'Orbitron'; color: #fff; }
+        .stat-group { display: flex; gap: 15px; }
+        .stat-box { background: #2b2b35; padding: 8px 15px; border-radius: 5px; min-width: 70px; }
+        .label { font-size: 0.7rem; color: #aaa; text-transform: uppercase; display: block; }
+        .value { font-size: 1.2rem; font-weight: 900; font-family: 'Orbitron'; }
 
-        /* WINNER TEXT */
-        .winner-banner { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); background: gold; color: black; font-weight: 900; padding: 3px 25px; border-radius: 20px; font-family: 'Orbitron'; font-size: 0.9rem; letter-spacing: 2px; }
+        /* WINNER BADGE ON MAIN BOARD */
+        .winner-badge { position: absolute; top: -10px; right: 10px; background: gold; color: black; font-weight: 900; font-size: 0.7rem; padding: 2px 10px; border-radius: 5px; transform: skew(10deg); font-family: 'Orbitron'; box-shadow: 0 0 10px gold; }
 
-        /* IMPROVED FLAGS (SVG Data for high reliability) */
-        .flag { position: fixed; bottom: 10px; width: 120px; opacity: 0.6; z-index: -1; }
-        .flag-left { left: 10px; }
-        .flag-right { right: 10px; transform: scaleX(-1); }
+        /* DECORATIVE FLAGS */
+        .flag { position: fixed; bottom: -10px; width: 150px; height: 100px; z-index: -1; opacity: 0.4; pointer-events: none; }
+        .flag-left { left: -20px; transform: rotate(15deg); }
+        .flag-right { right: -20px; transform: rotate(-15deg); }
 
         /* ADMIN PANEL */
-        #admin-section { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0a0a0f; z-index: 200; overflow-y: auto; padding: 20px; }
-        .sort-options { background: #1c1c24; padding: 15px; margin-bottom: 20px; border-radius: 10px; display: flex; justify-content: center; gap: 10px; border: 1px solid #444; }
-        .admin-row { background: #16161d; margin-bottom: 10px; padding: 15px; border-radius: 8px; border: 1px solid #333; max-width: 900px; margin-inline: auto; display: flex; flex-direction: column; }
+        #admin-section { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #15151e; z-index: 200; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+        .sort-options { background: #2b2b35; padding: 15px; margin-bottom: 20px; border-radius: 8px; display: flex; justify-content: center; gap: 10px; }
+        .admin-row { background: #1f1f27; margin-bottom: 10px; padding: 15px; border-radius: 8px; border: 1px solid #333; max-width: 900px; margin-inline: auto; display: flex; flex-direction: column; gap: 10px; }
+        .admin-info { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 8px; }
         
-        button { padding: 12px 16px; background: var(--f1-red); border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 6px; text-transform: uppercase; font-size: 0.8rem; }
-        .btn-active { background: gold !important; color: black !important; box-shadow: 0 0 10px gold; }
+        button { padding: 10px 14px; background: var(--f1-red); border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 6px; text-transform: uppercase; font-size: 0.75rem; }
+        .btn-active { background: gold; color: black; border: 2px solid white; }
+        .btn-neg { background: #444; } .btn-win { background: gold; color: black; }
     </style>
 </head>
 <body>
 
-    <div id="admin-lock-icon" onclick="checkPassword()">⚙️</div>
+    <div id="admin-lock-icon" onclick="checkPassword()">🔒</div>
 
-    <h1>F1 RC CHAMPIONSHIP</h1>
+    <h1>F1 RC LIVE SCOREBOARD</h1>
 
     <div class="leaderboard-container" id="leaderboard">
-        <p>Initializing Pit Wall...</p>
+        <p>Syncing Data...</p>
     </div>
 
-    <!-- Flags using reliable SVG pattern -->
-    <svg class="flag flag-left" viewBox="0 0 100 60"><rect width="100" height="60" fill="white"/><rect width="20" height="20" fill="black"/><rect x="40" width="20" height="20" fill="black"/><rect x="80" width="20" height="20" fill="black"/><rect x="20" y="20" width="20" height="20" fill="black"/><rect x="60" y="20" width="20" height="20" fill="black"/><rect y="40" width="20" height="20" fill="black"/><rect x="40" y="40" width="20" height="20" fill="black"/><rect x="80" y="40" width="20" height="20" fill="black"/></svg>
-    <svg class="flag flag-right" viewBox="0 0 100 60"><rect width="100" height="60" fill="white"/><rect width="20" height="20" fill="black"/><rect x="40" width="20" height="20" fill="black"/><rect x="80" width="20" height="20" fill="black"/><rect x="20" y="20" width="20" height="20" fill="black"/><rect x="60" y="20" width="20" height="20" fill="black"/><rect y="40" width="20" height="20" fill="black"/><rect x="40" y="40" width="20" height="20" fill="black"/><rect x="80" y="40" width="20" height="20" fill="black"/></svg>
+    <!-- Decorative Flags -->
+    <img src="https://upload.wikimedia.org/wikipedia/commons/7/7b/Racing_flags.svg" class="flag flag-left">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/7/7b/Racing_flags.svg" class="flag flag-right">
 
+    <!-- ADMIN PANEL -->
     <div id="admin-section">
-        <h2 style="font-family: Orbitron;">RACE CONTROL</h2>
-        <button onclick="document.getElementById('admin-section').style.display='none'">EXIT ADMIN</button>
+        <h2 style="font-family: Orbitron; color: var(--f1-red);">RACE CONTROL</h2>
+        <button class="btn-neg" onclick="document.getElementById('admin-section').style.display='none'" style="margin-bottom:20px;">← EXIT ADMIN</button>
         
         <div class="sort-options">
-            <span>SORT BY:</span>
-            <button id="btn-both" class="btn-active" onclick="changeSort('both')">AUTO (P+L)</button>
-            <button id="btn-points" onclick="changeSort('points')">POINTS ONLY</button>
-            <button id="btn-laps" onclick="changeSort('laps')">LAPS ONLY</button>
+            <span style="font-weight:bold; margin-right:10px;">SORT BY:</span>
+            <button id="sort-both" class="btn-active" onclick="setSort('both')">Both (Default)</button>
+            <button id="sort-points" onclick="setSort('points')">Points</button>
+            <button id="sort-laps" onclick="setSort('laps')">Laps</button>
         </div>
 
         <div id="admin-list"></div>
-        <div style="margin-top: 40px; padding: 20px; border-top: 1px solid #444;">
-            <input type="text" id="newTeam" placeholder="Team Name" style="padding:12px; border-radius:5px; border:none; width:180px;">
-            <button onclick="addTeam()">ADD TEAM</button>
-            <button style="background:orange; margin-left:10px;" onclick="resetAll()">RESET RACE</button>
+        
+        <div style="margin-top: 30px; padding: 20px; border-top: 2px solid #333;">
+            <input type="text" id="newTeamName" placeholder="New Team Name" style="padding:12px; border-radius:5px; border:none; width:200px;">
+            <button onclick="addNewTeam()">Add Team</button>
+            <br><br>
+            <button style="background:orange;" onclick="resetAll()">⚠️ RESET ALL SCORES</button>
         </div>
     </div>
 
@@ -102,69 +100,67 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        let sortMode = 'both';
+        let currentSort = 'both';
 
         function checkPassword() {
-            if (prompt("Access Key:") === "CBS@2026") document.getElementById('admin-section').style.display = "block";
+            if (prompt("Enter Access Key:") === "CBS@2026") document.getElementById('admin-section').style.display = "block";
+            else alert("Denied!");
         }
 
-        function changeSort(mode) {
-            sortMode = mode;
+        function setSort(type) {
+            currentSort = type;
             document.querySelectorAll('.sort-options button').forEach(b => b.classList.remove('btn-active'));
-            document.getElementById('btn-' + mode).classList.add('btn-active');
-            db.ref('scores').once('value', s => render(s.val()));
+            document.getElementById('sort-' + type).classList.add('btn-active');
+            db.ref('scores').once('value', s => renderUI(s.val()));
         }
 
-        function getCol(n) {
-            const l = n.toLowerCase();
-            return l.includes('red')?'name-red':l.includes('blue')?'name-blue':l.includes('green')?'name-green':l.includes('yellow')?'name-yellow':'';
+        function getColorClass(name) {
+            const n = name.toLowerCase();
+            return n.includes('red')?'name-red':n.includes('blue')?'name-blue':n.includes('green')?'name-green':n.includes('yellow')?'name-yellow':'';
         }
 
-        db.ref('scores').on('value', s => render(s.val()));
+        db.ref('scores').on('value', (s) => renderUI(s.val()));
 
-        function render(data) {
+        function renderUI(data) {
             if (!data) return;
             const board = document.getElementById('leaderboard');
             const list = document.getElementById('admin-list');
             board.innerHTML = ''; list.innerHTML = '';
 
             const cars = Object.values(data).sort((a,b) => {
-                if (sortMode === 'points') return b.points - a.points;
-                if (sortMode === 'laps') return b.laps - a.laps;
-                // Auto sorting (Points then Laps)
+                if (currentSort === 'points') return b.points - a.points;
+                if (currentSort === 'laps') return b.laps - a.laps;
                 return b.points !== a.points ? b.points - a.points : b.laps - a.laps;
             });
 
             cars.forEach((car, i) => {
-                const col = getCol(car.house_name);
-                const isWin = car.isWinner;
-                
-                // MAIN BOARD
+                const color = getColorClass(car.house_name);
+                const winLabel = car.isWinner ? `<div class="winner-badge">CHAMPION</div>` : '';
+
                 board.innerHTML += `
-                    <div class="row ${isWin ? 'winner-row' : ''}">
-                        ${isWin ? '<div class="winner-banner">👑 WINNER: ' + car.house_name + ' 👑</div>' : ''}
+                    <div class="row">
+                        ${winLabel}
                         <div class="content">
                             <div class="rank">P${i+1}</div>
-                            <div class="name ${col}">${car.house_name}</div>
+                            <div class="name ${color}">${car.house_name}</div>
                             <div class="stat-group">
-                                <div class="stat-box"><span class="label">LAPS</span><span class="value">${car.laps}</span></div>
-                                <div class="stat-box"><span class="label">POINTS</span><span class="value">${car.points}</span></div>
+                                <div class="stat-box"><span class="label">Laps</span><span class="value">${car.laps}</span></div>
+                                <div class="stat-box"><span class="label">Points</span><span class="value">${car.points}</span></div>
                             </div>
                         </div>
                     </div>`;
 
-                // ADMIN LIST
                 list.innerHTML += `
                     <div class="admin-row">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                            <span class="${col}"><b>${car.house_name}</b></span>
-                            <span>L:${car.laps} | P:${car.points}</span>
+                        <div class="admin-info">
+                            <span class="${color}"><b>${car.house_name}</b></span>
+                            <span>L: <b>${car.laps}</b> | P: <b>${car.points}</b></span>
                         </div>
-                        <div style="display:flex; gap:5px; justify-content:center;">
-                            <button onclick="upd('${car.id}','laps',${car.laps+1})">+L</button>
-                            <button style="background:#444" onclick="upd('${car.id}','laps',${car.laps-1})">-L</button>
-                            <button onclick="upd('${car.id}','points',${car.points+10})">+10</button>
-                            <button class="btn-active" onclick="setWin('${car.id}','${car.house_name}')">WIN</button>
+                        <div class="admin-btns">
+                            <button onclick="upd('${car.id}','laps',${car.laps+1})">+ L</button>
+                            <button class="btn-neg" onclick="upd('${car.id}','laps',${car.laps-1})">- L</button>
+                            <button onclick="upd('${car.id}','points',${car.points+10})">+ 10</button>
+                            <button class="btn-win" onclick="win('${car.id}', '${car.house_name}')">🏆 WIN</button>
                             <button style="background:#b00" onclick="del('${car.id}')">DEL</button>
                         </div>
                     </div>`;
@@ -172,19 +168,19 @@
         }
 
         window.upd = (id, k, v) => db.ref('scores/'+id).update({[k]: v});
-        window.setWin = (id, n) => {
-            if(confirm("Confirm "+n+" as Winner?")) {
+        window.win = (id, name) => {
+            if(confirm("Confirm " + name + " as CHAMPION?")) {
                 db.ref('scores').once('value', s => {
                     let up = {}; s.forEach(c => up[c.key+'/isWinner'] = false);
-                    db.ref('scores').update(up).then(() => db.ref('scores/'+id).update({isWinner:true}));
+                    db.ref('scores').update(up).then(() => db.ref('scores/'+id).update({isWinner: true}));
                 });
             }
         };
-        window.del = (id) => confirm("Delete?") && db.ref('scores/'+id).remove();
-        window.addTeam = () => {
-            const n = document.getElementById('newTeam').value; if(!n) return;
+        window.del = (id) => confirm("Delete team?") && db.ref('scores/'+id).remove();
+        window.addNewTeam = () => {
+            const n = document.getElementById('newTeamName').value; if(!n) return;
             const id = "t_"+Date.now(); db.ref('scores/'+id).set({id, house_name:n, laps:0, points:0, isWinner:false});
-            document.getElementById('newTeam').value='';
+            document.getElementById('newTeamName').value='';
         };
         window.resetAll = () => {
             if(confirm("Full Reset?")) db.ref('scores').once('value', s => {
