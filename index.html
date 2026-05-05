@@ -50,7 +50,11 @@
         
         button { padding: 10px 14px; background: var(--f1-red); border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 6px; text-transform: uppercase; font-size: 0.75rem; }
         .btn-neg { background: #444; } .btn-win { background: gold; color: black; }
-        .big-btn { width: 100%; height: 150px; font-size: 3.5rem; margin: 20px 0; border-radius: 20px; font-family: 'Orbitron'; font-weight: 900; }
+        
+        /* Scrutineer Specific Styles */
+        .big-btn { width: 100%; height: 120px; font-size: 3rem; margin: 15px 0; border-radius: 20px; font-family: 'Orbitron'; font-weight: 900; }
+        .scrut-counter { background: #1f1f27; border: 2px solid var(--f1-red); padding: 20px; border-radius: 15px; margin: 20px 0; }
+        .scrut-value { font-size: 5rem; font-family: 'Orbitron'; font-weight: 900; color: #fff; display: block; }
         
         input { padding: 8px; border-radius: 4px; border: 1px solid #444; background: #2b2b35; color: white; }
     </style>
@@ -71,12 +75,18 @@
 
     <!-- SCRUTINEER (TEAM ONLY) PANEL -->
     <div id="scrutineer-section">
-        <h2 id="scrut-name" style="font-family: Orbitron; color: var(--f1-red); margin-top: 40px;">TEAM</h2>
-        <p>FAST CONTROL MODE</p>
+        <h2 id="scrut-name" style="font-family: Orbitron; color: var(--f1-red); margin-top: 20px; font-size: 2rem;">TEAM</h2>
+        
+        <div class="scrut-counter">
+            <span style="font-size: 0.9rem; color: #aaa; text-transform: uppercase; letter-spacing: 2px;">Current Laps</span>
+            <span id="scrut-lap-display" class="scrut-value">0</span>
+        </div>
+
         <button class="big-btn" style="background: #28a745;" onclick="quickLap(1)">+ LAP</button>
-        <button class="big-btn" style="background: #444; height: 80px; font-size: 1.5rem;" onclick="quickLap(-1)">- LAP ERROR</button>
+        <button class="big-btn" style="background: #444; height: 70px; font-size: 1.2rem;" onclick="quickLap(-1)">CORRECT ERROR (-1)</button>
+        
         <br><br>
-        <button class="btn-neg" onclick="location.reload()">← LOGOUT</button>
+        <button class="btn-neg" onclick="location.reload()" style="padding: 15px 30px;">← LOGOUT</button>
     </div>
 
     <!-- ADMIN PANEL -->
@@ -107,7 +117,6 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        let currentSort = 'both';
         let activeTeamId = null;
 
         // --- PASSWORD LOGIC ---
@@ -119,7 +128,6 @@
             if (pass === "CBS@2026") {
                 document.getElementById('admin-section').style.display = "block";
             } else {
-                // Check if the password matches any team's shortcut key
                 db.ref('scores').once('value', snapshot => {
                     let found = false;
                     snapshot.forEach(child => {
@@ -137,18 +145,31 @@
         function openScrutineer(team) {
             activeTeamId = team.id;
             document.getElementById('scrut-name').innerText = team.house_name;
+            document.getElementById('scrut-name').className = getColorClass(team.house_name);
             document.getElementById('scrutineer-section').style.display = "block";
+            
+            // Set up a specific listener for this team's lap count
+            db.ref('scores/' + activeTeamId + '/laps').on('value', snap => {
+                document.getElementById('scrut-lap-display').innerText = snap.val() || 0;
+            });
         }
 
         function quickLap(val) {
             if (!activeTeamId) return;
-            db.ref('scores/' + activeTeamId + '/laps').transaction(laps => (laps || 0) + val);
+            db.ref('scores/' + activeTeamId + '/laps').transaction(laps => {
+                const newLaps = (laps || 0) + val;
+                return newLaps < 0 ? 0 : newLaps; // Don't allow negative laps
+            });
         }
 
         // --- UI RENDERING ---
         function getColorClass(name) {
             const n = name.toLowerCase();
-            return n.includes('red')?'name-red':n.includes('blue')?'name-blue':n.includes('green')?'name-green':n.includes('yellow')?'name-yellow':'';
+            if(n.includes('red')) return 'name-red';
+            if(n.includes('blue')) return 'name-blue';
+            if(n.includes('green')) return 'name-green';
+            if(n.includes('yellow')) return 'name-yellow';
+            return '';
         }
 
         db.ref('scores').on('value', (s) => renderUI(s.val()));
@@ -160,16 +181,13 @@
             board.innerHTML = ''; list.innerHTML = '';
 
             const allCars = Object.values(data);
-
-            // Leaderboard Sort
             const sortedCars = [...allCars].sort((a,b) => (b.points !== a.points ? b.points - a.points : b.laps - a.laps));
 
             sortedCars.forEach((car, i) => {
                 const color = getColorClass(car.house_name);
-                const winLabel = car.isWinner ? `<div class="winner-badge">🏆 WINNER</div>` : '';
                 board.innerHTML += `
                     <div class="row ${car.isWinner ? 'winner-active' : ''}">
-                        ${winLabel}
+                        ${car.isWinner ? '<div class="winner-badge">🏆 WINNER</div>' : ''}
                         <div class="content">
                             <div class="rank">P${i+1}</div>
                             <div class="name ${color}">${car.house_name}</div>
@@ -181,7 +199,6 @@
                     </div>`;
             });
 
-            // Admin List
             allCars.sort((a,b) => a.house_name.localeCompare(b.house_name)).forEach((car) => {
                 const color = getColorClass(car.house_name);
                 list.innerHTML += `
@@ -194,7 +211,7 @@
                             <button onclick="upd('${car.id}','laps',${car.laps+1})">+L</button>
                             <button class="btn-neg" onclick="upd('${car.id}','laps',${car.laps-1})">-L</button>
                             <button onclick="upd('${car.id}','points',${car.points+10})">+10P</button>
-                            <input type="text" placeholder="Key (e.g. B1)" style="width:70px" 
+                            <input type="text" placeholder="Key" style="width:60px" 
                                    value="${car.shortcut || ''}" 
                                    onchange="upd('${car.id}','shortcut',this.value.toUpperCase())">
                             <button class="btn-win" onclick="win('${car.id}', '${car.house_name}')">🏆</button>
@@ -204,7 +221,6 @@
             });
         }
 
-        // --- DATABASE HELPERS ---
         window.upd = (id, k, v) => db.ref('scores/'+id).update({[k]: v});
         window.win = (id, name) => {
             if(confirm("Confirm " + name + " as CHAMPION?")) {
