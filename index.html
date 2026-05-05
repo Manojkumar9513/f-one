@@ -4,171 +4,229 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>F1 RC LIVE SCOREBOARD</title>
-    <!-- ADD THIS JUST ABOVE THE </head> TAG -->
-<style>
-    #scrutineer-section { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #15151e; z-index: 300; padding: 40px 20px; box-sizing: border-box; text-align: center; }
-    .big-btn { width: 100%; height: 120px; font-size: 3rem; margin: 20px 0; border-radius: 20px; font-family: 'Orbitron'; }
-</style>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Roboto:wght@300;700&display=swap');
+        :root { --f1-red: #e10600; --dark-bg: #15151e; --card-bg: #1f1f27; }
+        
+        body { background-color: var(--dark-bg); color: white; font-family: 'Roboto', sans-serif; margin: 0; padding: 20px; text-align: center; overflow-x: hidden;}
+        
+        /* Admin Lock Icon */
+        #admin-lock-icon { position: fixed; top: 15px; left: 15px; cursor: pointer; z-index: 100; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
 
-<!-- ADD THIS JUST ABOVE THE <div id="admin-section"> TAG -->
-<div id="scrutineer-section">
-    <h2 id="scrutineer-team-name" style="font-family: Orbitron; font-size: 2rem;">TEAM NAME</h2>
-    <hr border="1" color="#e10600">
-    <button class="big-btn" style="background: #28a745;" onclick="quickLap(1)">+ LAP</button>
-    <button class="big-btn" style="background: #444; height: 80px; font-size: 1.5rem;" onclick="quickLap(-1)">- LAP ERROR</button>
-    <br><br>
-    <button class="btn-neg" onclick="location.reload()">LOGOUT</button>
-</div>
+        /* Logo Styling */
+        #logo-placeholder { position: fixed; top: -45px; right: 15px; width: 160px; height: 180px; z-index: 100; display: flex; align-items: center; justify-content: center; }
+        #logo-placeholder img { max-width: 100%; max-height: 100%; border-radius: 8px; display: block; }
 
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyD8RwbZzEvpqWgrk2VKSj1XQAgrRQ-oieg",
-        authDomain: "fone-7f6e5.firebaseapp.com",
-        databaseURL: "https://fone-7f6e5-default-rtdb.firebaseio.com",
-        projectId: "fone-7f6e5",
-        storageBucket: "fone-7f6e5.firebasestorage.app",
-        messagingSenderId: "540549386700",
-        appId: "1:540549386700:web:59ebec898bd2e13f6c4d69"
-    };
+        h1 { font-family: 'Orbitron', sans-serif; text-transform: uppercase; letter-spacing: 5px; border-bottom: 4px solid var(--f1-red); padding-bottom: 10px; margin-bottom: 30px; }
+        
+        .leaderboard-container { max-width: 800px; margin: 0 auto; padding-bottom: 100px; }
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    let currentSort = 'both';
-    let activeQuickId = null;
+        .row { display: flex; align-items: center; background: var(--card-bg); margin-bottom: 12px; padding: 15px; border-left: 10px solid var(--f1-red); transform: skew(-10deg); transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
+        .row:first-child { border-left-color: #ffd700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
+        
+        .winner-active { transform: skew(-10deg) scale(1.08); z-index: 10; border: 2px solid gold; box-shadow: 0 0 30px rgba(255, 215, 0, 0.4); margin: 25px 0; }
 
-    // --- LOGIC FOR THE LOCK BOX ---
-    function checkPassword() {
-        const pass = prompt("Enter Access Key (Admin or Team Code):");
-        if (!pass) return;
+        .content { transform: skew(10deg); display: flex; width: 100%; justify-content: space-between; align-items: center; }
 
-        const entry = pass.toUpperCase();
+        .rank { width: 50px; font-size: 1.8rem; font-weight: 900; color: var(--f1-red); }
+        .name { flex-grow: 1; font-size: 1.3rem; font-weight: 700; text-transform: uppercase; text-align: left; margin-left: 20px; }
+        
+        .name-red { color: #ff4d4d; } .name-blue { color: #4d94ff; } .name-green { color: #52ff4d; } .name-yellow { color: #ffff4d; }
 
-        if (entry === "CBS@2026") {
-            document.getElementById('admin-section').style.display = "block";
-        } else {
-            // Check for Team Shortcut Keys (e.g., B1, R1)
-            db.ref('scores').once('value', s => {
-                let found = false;
-                s.forEach(child => {
-                    const car = child.val();
-                    if (car.shortcut && car.shortcut.toUpperCase() === entry) {
-                        openScrutineerMode(car);
-                        found = true;
-                    }
+        .stat-group { display: flex; gap: 15px; }
+        .stat-box { background: #2b2b35; padding: 8px 15px; border-radius: 5px; min-width: 70px; }
+        .label { font-size: 0.7rem; color: #aaa; text-transform: uppercase; display: block; }
+        .value { font-size: 1.2rem; font-weight: 900; font-family: 'Orbitron'; }
+
+        .winner-badge { position: absolute; top: -12px; right: 10px; background: gold; color: black; font-weight: 900; font-size: 0.8rem; padding: 4px 15px; border-radius: 5px; transform: skew(10deg); font-family: 'Orbitron'; box-shadow: 0 0 15px gold; z-index: 15; }
+
+        /* ADMIN & SCRUTINEER PANELS */
+        #admin-section, #scrutineer-section { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #15151e; z-index: 200; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+        
+        .admin-row { background: #1f1f27; margin-bottom: 10px; padding: 15px; border-radius: 8px; border: 1px solid #333; max-width: 900px; margin-inline: auto; }
+        .admin-info { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 8px; margin-bottom: 10px;}
+        
+        button { padding: 10px 14px; background: var(--f1-red); border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 6px; text-transform: uppercase; font-size: 0.75rem; }
+        .btn-neg { background: #444; } .btn-win { background: gold; color: black; }
+        .big-btn { width: 100%; height: 150px; font-size: 3.5rem; margin: 20px 0; border-radius: 20px; font-family: 'Orbitron'; font-weight: 900; }
+        
+        input { padding: 8px; border-radius: 4px; border: 1px solid #444; background: #2b2b35; color: white; }
+    </style>
+</head>
+<body>
+
+    <div id="admin-lock-icon" onclick="checkPassword()">🔒</div>
+
+    <div id="logo-placeholder">
+        <img src="cb.jpeg" alt="CBS LOGO" onerror="this.style.display='none'">
+    </div>
+
+    <h1>F1 RC LIVE SCOREBOARD</h1>
+
+    <div class="leaderboard-container" id="leaderboard">
+        <p>Syncing Data...</p>
+    </div>
+
+    <!-- SCRUTINEER (TEAM ONLY) PANEL -->
+    <div id="scrutineer-section">
+        <h2 id="scrut-name" style="font-family: Orbitron; color: var(--f1-red); margin-top: 40px;">TEAM</h2>
+        <p>FAST CONTROL MODE</p>
+        <button class="big-btn" style="background: #28a745;" onclick="quickLap(1)">+ LAP</button>
+        <button class="big-btn" style="background: #444; height: 80px; font-size: 1.5rem;" onclick="quickLap(-1)">- LAP ERROR</button>
+        <br><br>
+        <button class="btn-neg" onclick="location.reload()">← LOGOUT</button>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div id="admin-section">
+        <h2 style="font-family: Orbitron; color: var(--f1-red);">RACE CONTROL (MASTER)</h2>
+        <button class="btn-neg" onclick="document.getElementById('admin-section').style.display='none'" style="margin-bottom:20px;">← EXIT ADMIN</button>
+        
+        <div id="admin-list"></div>
+        
+        <div style="margin-top: 30px; padding: 20px; border-top: 2px solid #333;">
+            <input type="text" id="newTeamName" placeholder="New Team Name">
+            <button onclick="addNewTeam()">Add Team</button>
+            <br><br>
+            <button style="background:orange;" onclick="resetAll()">⚠️ RESET ALL SCORES</button>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyD8RwbZzEvpqWgrk2VKSj1XQAgrRQ-oieg",
+            authDomain: "fone-7f6e5.firebaseapp.com",
+            databaseURL: "https://fone-7f6e5-default-rtdb.firebaseio.com",
+            projectId: "fone-7f6e5",
+            storageBucket: "fone-7f6e5.firebasestorage.app",
+            messagingSenderId: "540549386700",
+            appId: "1:540549386700:web:59ebec898bd2e13f6c4d69"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        let currentSort = 'both';
+        let activeTeamId = null;
+
+        // --- PASSWORD LOGIC ---
+        function checkPassword() {
+            let pass = prompt("Enter Access Key:");
+            if (!pass) return;
+            pass = pass.toUpperCase();
+
+            if (pass === "CBS@2026") {
+                document.getElementById('admin-section').style.display = "block";
+            } else {
+                // Check if the password matches any team's shortcut key
+                db.ref('scores').once('value', snapshot => {
+                    let found = false;
+                    snapshot.forEach(child => {
+                        const team = child.val();
+                        if (team.shortcut && team.shortcut.toUpperCase() === pass) {
+                            openScrutineer(team);
+                            found = true;
+                        }
+                    });
+                    if (!found) alert("Invalid Access Key!");
                 });
-                if (!found) alert("Access Denied: Invalid Code");
-            });
+            }
         }
-    }
 
-    function openScrutineerMode(car) {
-        activeQuickId = car.id;
-        document.getElementById('scrutineer-team-name').innerText = car.house_name;
-        document.getElementById('scrutineer-team-name').className = getColorClass(car.house_name);
-        document.getElementById('scrutineer-section').style.display = "block";
-    }
+        function openScrutineer(team) {
+            activeTeamId = team.id;
+            document.getElementById('scrut-name').innerText = team.house_name;
+            document.getElementById('scrutineer-section').style.display = "block";
+        }
 
-    function quickLap(change) {
-        db.ref('scores/' + activeQuickId + '/laps').transaction(currentLaps => {
-            return (currentLaps || 0) + change;
-        });
-    }
+        function quickLap(val) {
+            if (!activeTeamId) return;
+            db.ref('scores/' + activeTeamId + '/laps').transaction(laps => (laps || 0) + val);
+        }
 
-    // --- EXISTING ADMIN FUNCTIONS ---
-    function setSort(type) {
-        currentSort = type;
-        document.querySelectorAll('.sort-options button').forEach(b => b.classList.remove('btn-active'));
-        document.getElementById('sort-' + type).classList.add('btn-active');
-        db.ref('scores').once('value', s => renderUI(s.val()));
-    }
+        // --- UI RENDERING ---
+        function getColorClass(name) {
+            const n = name.toLowerCase();
+            return n.includes('red')?'name-red':n.includes('blue')?'name-blue':n.includes('green')?'name-green':n.includes('yellow')?'name-yellow':'';
+        }
 
-    function getColorClass(name) {
-        const n = name.toLowerCase();
-        if (n.includes('red')) return 'name-red';
-        if (n.includes('blue')) return 'name-blue';
-        if (n.includes('green')) return 'name-green';
-        if (n.includes('yellow')) return 'name-yellow';
-        return '';
-    }
+        db.ref('scores').on('value', (s) => renderUI(s.val()));
 
-    db.ref('scores').on('value', (s) => renderUI(s.val()));
+        function renderUI(data) {
+            if (!data) return;
+            const board = document.getElementById('leaderboard');
+            const list = document.getElementById('admin-list');
+            board.innerHTML = ''; list.innerHTML = '';
 
-    function renderUI(data) {
-        if (!data) return;
-        const board = document.getElementById('leaderboard');
-        const list = document.getElementById('admin-list');
-        board.innerHTML = ''; list.innerHTML = '';
+            const allCars = Object.values(data);
 
-        const allCars = Object.values(data);
-        const sortedCars = [...allCars].sort((a,b) => {
-            if (currentSort === 'points') return b.points - a.points;
-            if (currentSort === 'laps') return b.laps - a.laps;
-            return b.points !== a.points ? b.points - a.points : b.laps - a.laps;
-        });
+            // Leaderboard Sort
+            const sortedCars = [...allCars].sort((a,b) => (b.points !== a.points ? b.points - a.points : b.laps - a.laps));
 
-        const adminCars = [...allCars].sort((a,b) => a.house_name.localeCompare(b.house_name));
-
-        sortedCars.forEach((car, i) => {
-            const color = getColorClass(car.house_name);
-            const winLabel = car.isWinner ? `<div class="winner-badge">🏆 WINNER</div>` : '';
-            const winnerClass = car.isWinner ? 'winner-active' : '';
-
-            board.innerHTML += `
-                <div class="row ${winnerClass}">
-                    ${winLabel}
-                    <div class="content">
-                        <div class="rank">P${i+1}</div>
-                        <div class="name ${color}">${car.house_name}</div>
-                        <div class="stat-group">
-                            <div class="stat-box"><span class="label">Laps</span><span class="value">${car.laps}</span></div>
-                            <div class="stat-box"><span class="label">Points</span><span class="value">${car.points}</span></div>
+            sortedCars.forEach((car, i) => {
+                const color = getColorClass(car.house_name);
+                const winLabel = car.isWinner ? `<div class="winner-badge">🏆 WINNER</div>` : '';
+                board.innerHTML += `
+                    <div class="row ${car.isWinner ? 'winner-active' : ''}">
+                        ${winLabel}
+                        <div class="content">
+                            <div class="rank">P${i+1}</div>
+                            <div class="name ${color}">${car.house_name}</div>
+                            <div class="stat-group">
+                                <div class="stat-box"><span class="label">Laps</span><span class="value">${car.laps}</span></div>
+                                <div class="stat-box"><span class="label">Points</span><span class="value">${car.points}</span></div>
+                            </div>
                         </div>
-                    </div>
-                </div>`;
-        });
+                    </div>`;
+            });
 
-        adminCars.forEach((car) => {
-            const color = getColorClass(car.house_name);
-            list.innerHTML += `
-                <div class="admin-row">
-                    <div class="admin-info">
-                        <span class="${color}"><b>${car.house_name}</b> (Key: ${car.shortcut || 'None'})</span>
-                        <span>L: <b>${car.laps}</b> | P: <b>${car.points}</b></span>
-                    </div>
-                    <div class="admin-btns">
-                        <button onclick="upd('${car.id}','laps',${car.laps+1})">+ L</button>
-                        <button class="btn-neg" onclick="upd('${car.id}','laps',${car.laps-1})">- L</button>
-                        <input type="text" placeholder="Set Key" style="width:60px" onchange="upd('${car.id}','shortcut',this.value.toUpperCase())" value="${car.shortcut || ''}">
-                        <button onclick="upd('${car.id}','points',${car.points+10})">+ 10</button>
-                        <button class="btn-win" onclick="win('${car.id}', '${car.house_name}')">🏆 WIN</button>
-                        <button style="background:#b00" onclick="del('${car.id}')">DEL</button>
-                    </div>
-                </div>`;
-        });
-    }
-
-    window.upd = (id, k, v) => db.ref('scores/'+id).update({[k]: v});
-    window.win = (id, name) => {
-        if(confirm("Confirm " + name + " as CHAMPION?")) {
-            db.ref('scores').once('value', s => {
-                let up = {}; s.forEach(c => up[c.key+'/isWinner'] = false);
-                db.ref('scores').update(up).then(() => db.ref('scores/'+id).update({isWinner: true}));
+            // Admin List
+            allCars.sort((a,b) => a.house_name.localeCompare(b.house_name)).forEach((car) => {
+                const color = getColorClass(car.house_name);
+                list.innerHTML += `
+                    <div class="admin-row">
+                        <div class="admin-info">
+                            <span class="${color}"><b>${car.house_name}</b></span>
+                            <span>L: <b>${car.laps}</b> | P: <b>${car.points}</b></span>
+                        </div>
+                        <div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:center;">
+                            <button onclick="upd('${car.id}','laps',${car.laps+1})">+L</button>
+                            <button class="btn-neg" onclick="upd('${car.id}','laps',${car.laps-1})">-L</button>
+                            <button onclick="upd('${car.id}','points',${car.points+10})">+10P</button>
+                            <input type="text" placeholder="Key (e.g. B1)" style="width:70px" 
+                                   value="${car.shortcut || ''}" 
+                                   onchange="upd('${car.id}','shortcut',this.value.toUpperCase())">
+                            <button class="btn-win" onclick="win('${car.id}', '${car.house_name}')">🏆</button>
+                            <button style="background:#b00" onclick="del('${car.id}')">DEL</button>
+                        </div>
+                    </div>`;
             });
         }
-    };
-    window.del = (id) => confirm("Delete team?") && db.ref('scores/'+id).remove();
-    window.addNewTeam = () => {
-        const n = document.getElementById('newTeamName').value; if(!n) return;
-        const id = "t_"+Date.now(); 
-        db.ref('scores/'+id).set({id, house_name:n, laps:0, points:0, isWinner:false, shortcut: ''});
-        document.getElementById('newTeamName').value='';
-    };
-    window.resetAll = () => {
-        if(confirm("Full Reset?")) db.ref('scores').once('value', s => {
-            let up = {}; s.forEach(c => { up[c.key+'/laps']=0; up[c.key+'/points']=0; up[c.key+'/isWinner']=false; });
-            db.ref('scores').update(up);
-        });
-    };
-</script>
+
+        // --- DATABASE HELPERS ---
+        window.upd = (id, k, v) => db.ref('scores/'+id).update({[k]: v});
+        window.win = (id, name) => {
+            if(confirm("Confirm " + name + " as CHAMPION?")) {
+                db.ref('scores').once('value', s => {
+                    let up = {}; s.forEach(c => up[c.key+'/isWinner'] = false);
+                    db.ref('scores').update(up).then(() => db.ref('scores/'+id).update({isWinner: true}));
+                });
+            }
+        };
+        window.del = (id) => confirm("Delete team?") && db.ref('scores/'+id).remove();
+        window.addNewTeam = () => {
+            const n = document.getElementById('newTeamName').value; if(!n) return;
+            const id = "t_"+Date.now(); 
+            db.ref('scores/'+id).set({id, house_name:n, laps:0, points:0, isWinner:false, shortcut:''});
+            document.getElementById('newTeamName').value='';
+        };
+        window.resetAll = () => {
+            if(confirm("Full Reset?")) db.ref('scores').once('value', s => {
+                let up = {}; s.forEach(c => { up[c.key+'/laps']=0; up[c.key+'/points']=0; up[c.key+'/isWinner']=false; });
+                db.ref('scores').update(up);
+            });
+        };
+    </script>
 </body>
 </html>
