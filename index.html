@@ -125,7 +125,7 @@
             if (!pass) return;
             pass = pass.toUpperCase();
 
-            if (pass === "CBS@2026") {
+            if (pass === "mk@CBS@2026") {
                 document.getElementById('admin-section').style.display = "block";
             } else {
                 db.ref('scores').once('value', snapshot => {
