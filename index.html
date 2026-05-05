@@ -12,10 +12,10 @@
         
         body { background-color: var(--dark-bg); color: white; font-family: 'Roboto', sans-serif; margin: 0; padding: 20px; text-align: center; overflow-x: hidden;}
         
-        /* Admin Lock Icon */
+        /* Admin Lock Icon (Top Left) */
         #admin-lock-icon { position: fixed; top: 15px; left: 15px; cursor: pointer; z-index: 100; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
 
-        /* Logo Styling */
+        /* Logo Styling (Top Right) */
         #logo-placeholder { position: fixed; top: -45px; right: 15px; width: 160px; height: 180px; z-index: 100; display: flex; align-items: center; justify-content: center; }
         #logo-placeholder img { max-width: 100%; max-height: 100%; border-radius: 8px; display: block; }
 
@@ -26,6 +26,7 @@
         .row { display: flex; align-items: center; background: var(--card-bg); margin-bottom: 12px; padding: 15px; border-left: 10px solid var(--f1-red); transform: skew(-10deg); transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
         .row:first-child { border-left-color: #ffd700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
         
+        /* HIGHLIGHT FOR WINNING TEAM */
         .winner-active { transform: skew(-10deg) scale(1.08); z-index: 10; border: 2px solid gold; box-shadow: 0 0 30px rgba(255, 215, 0, 0.4); margin: 25px 0; }
 
         .content { transform: skew(10deg); display: flex; width: 100%; justify-content: space-between; align-items: center; }
@@ -40,23 +41,18 @@
         .label { font-size: 0.7rem; color: #aaa; text-transform: uppercase; display: block; }
         .value { font-size: 1.2rem; font-weight: 900; font-family: 'Orbitron'; }
 
+        /* WINNER BADGE */
         .winner-badge { position: absolute; top: -12px; right: 10px; background: gold; color: black; font-weight: 900; font-size: 0.8rem; padding: 4px 15px; border-radius: 5px; transform: skew(10deg); font-family: 'Orbitron'; box-shadow: 0 0 15px gold; z-index: 15; }
 
-        /* ADMIN & SCRUTINEER PANELS */
-        #admin-section, #scrutineer-section { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #15151e; z-index: 200; overflow-y: auto; padding: 20px; box-sizing: border-box; }
-        
-        .admin-row { background: #1f1f27; margin-bottom: 10px; padding: 15px; border-radius: 8px; border: 1px solid #333; max-width: 900px; margin-inline: auto; }
-        .admin-info { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 8px; margin-bottom: 10px;}
+        /* ADMIN PANEL */
+        #admin-section { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #15151e; z-index: 200; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+        .sort-options { background: #2b2b35; padding: 15px; margin-bottom: 20px; border-radius: 8px; display: flex; justify-content: center; gap: 10px; }
+        .admin-row { background: #1f1f27; margin-bottom: 10px; padding: 15px; border-radius: 8px; border: 1px solid #333; max-width: 900px; margin-inline: auto; display: flex; flex-direction: column; gap: 10px; }
+        .admin-info { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 8px; }
         
         button { padding: 10px 14px; background: var(--f1-red); border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 6px; text-transform: uppercase; font-size: 0.75rem; }
+        .btn-active { background: gold; color: black; border: 2px solid white; }
         .btn-neg { background: #444; } .btn-win { background: gold; color: black; }
-        
-        /* Scrutineer Specific Styles */
-        .big-btn { width: 100%; height: 120px; font-size: 3rem; margin: 15px 0; border-radius: 20px; font-family: 'Orbitron'; font-weight: 900; }
-        .scrut-counter { background: #1f1f27; border: 2px solid var(--f1-red); padding: 20px; border-radius: 15px; margin: 20px 0; }
-        .scrut-value { font-size: 5rem; font-family: 'Orbitron'; font-weight: 900; color: #fff; display: block; }
-        
-        input { padding: 8px; border-radius: 4px; border: 1px solid #444; background: #2b2b35; color: white; }
     </style>
 </head>
 <body>
@@ -73,31 +69,22 @@
         <p>Syncing Data...</p>
     </div>
 
-    <!-- SCRUTINEER (TEAM ONLY) PANEL -->
-    <div id="scrutineer-section">
-        <h2 id="scrut-name" style="font-family: Orbitron; color: var(--f1-red); margin-top: 20px; font-size: 2rem;">TEAM</h2>
-        
-        <div class="scrut-counter">
-            <span style="font-size: 0.9rem; color: #aaa; text-transform: uppercase; letter-spacing: 2px;">Current Laps</span>
-            <span id="scrut-lap-display" class="scrut-value">0</span>
-        </div>
-
-        <button class="big-btn" style="background: #28a745;" onclick="quickLap(1)">+ LAP</button>
-        <button class="big-btn" style="background: #444; height: 70px; font-size: 1.2rem;" onclick="quickLap(-1)">CORRECT ERROR (-1)</button>
-        
-        <br><br>
-        <button class="btn-neg" onclick="location.reload()" style="padding: 15px 30px;">← LOGOUT</button>
-    </div>
-
     <!-- ADMIN PANEL -->
     <div id="admin-section">
-        <h2 style="font-family: Orbitron; color: var(--f1-red);">RACE CONTROL (MASTER)</h2>
+        <h2 style="font-family: Orbitron; color: var(--f1-red);">RACE CONTROL</h2>
         <button class="btn-neg" onclick="document.getElementById('admin-section').style.display='none'" style="margin-bottom:20px;">← EXIT ADMIN</button>
         
+        <div class="sort-options">
+            <span style="font-weight:bold; margin-right:10px; line-height: 2.5;">MAIN PAGE SORT:</span>
+            <button id="sort-both" class="btn-active" onclick="setSort('both')">Auto (P+L)</button>
+            <button id="sort-points" onclick="setSort('points')">Points Only</button>
+            <button id="sort-laps" onclick="setSort('laps')">Laps Only</button>
+        </div>
+
         <div id="admin-list"></div>
         
         <div style="margin-top: 30px; padding: 20px; border-top: 2px solid #333;">
-            <input type="text" id="newTeamName" placeholder="New Team Name">
+            <input type="text" id="newTeamName" placeholder="New Team Name" style="padding:12px; border-radius:5px; border:none; width:200px;">
             <button onclick="addNewTeam()">Add Team</button>
             <br><br>
             <button style="background:orange;" onclick="resetAll()">⚠️ RESET ALL SCORES</button>
@@ -117,59 +104,23 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        let activeTeamId = null;
+        let currentSort = 'both';
 
-        // --- PASSWORD LOGIC ---
         function checkPassword() {
-            let pass = prompt("Enter Access Key:");
-            if (!pass) return;
-            pass = pass.toUpperCase();
-
-            if (pass === "MKG@2026") {
-                document.getElementById('admin-section').style.display = "block";
-            } else {
-                db.ref('scores').once('value', snapshot => {
-                    let found = false;
-                    snapshot.forEach(child => {
-                        const team = child.val();
-                        if (team.shortcut && team.shortcut.toUpperCase() === pass) {
-                            openScrutineer(team);
-                            found = true;
-                        }
-                    });
-                    if (!found) alert("Invalid Access Key!");
-                });
-            }
+            if (prompt("Enter Access Key:") === "CBS@2026") document.getElementById('admin-section').style.display = "block";
+            else alert("Denied!");
         }
 
-        function openScrutineer(team) {
-            activeTeamId = team.id;
-            document.getElementById('scrut-name').innerText = team.house_name;
-            document.getElementById('scrut-name').className = getColorClass(team.house_name);
-            document.getElementById('scrutineer-section').style.display = "block";
-            
-            // Set up a specific listener for this team's lap count
-            db.ref('scores/' + activeTeamId + '/laps').on('value', snap => {
-                document.getElementById('scrut-lap-display').innerText = snap.val() || 0;
-            });
+        function setSort(type) {
+            currentSort = type;
+            document.querySelectorAll('.sort-options button').forEach(b => b.classList.remove('btn-active'));
+            document.getElementById('sort-' + type).classList.add('btn-active');
+            db.ref('scores').once('value', s => renderUI(s.val()));
         }
 
-        function quickLap(val) {
-            if (!activeTeamId) return;
-            db.ref('scores/' + activeTeamId + '/laps').transaction(laps => {
-                const newLaps = (laps || 0) + val;
-                return newLaps < 0 ? 0 : newLaps; // Don't allow negative laps
-            });
-        }
-
-        // --- UI RENDERING ---
         function getColorClass(name) {
             const n = name.toLowerCase();
-            if(n.includes('red')) return 'name-red';
-            if(n.includes('blue')) return 'name-blue';
-            if(n.includes('green')) return 'name-green';
-            if(n.includes('yellow')) return 'name-yellow';
-            return '';
+            return n.includes('red')?'name-red':n.includes('blue')?'name-blue':n.includes('green')?'name-green':n.includes('yellow')?'name-yellow':'';
         }
 
         db.ref('scores').on('value', (s) => renderUI(s.val()));
@@ -181,13 +132,23 @@
             board.innerHTML = ''; list.innerHTML = '';
 
             const allCars = Object.values(data);
-            const sortedCars = [...allCars].sort((a,b) => (b.points !== a.points ? b.points - a.points : b.laps - a.laps));
+
+            const sortedCars = [...allCars].sort((a,b) => {
+                if (currentSort === 'points') return b.points - a.points;
+                if (currentSort === 'laps') return b.laps - a.laps;
+                return b.points !== a.points ? b.points - a.points : b.laps - a.laps;
+            });
+
+            const adminCars = [...allCars].sort((a,b) => a.house_name.localeCompare(b.house_name));
 
             sortedCars.forEach((car, i) => {
                 const color = getColorClass(car.house_name);
+                const winLabel = car.isWinner ? `<div class="winner-badge">🏆 WINNER</div>` : '';
+                const winnerClass = car.isWinner ? 'winner-active' : '';
+
                 board.innerHTML += `
-                    <div class="row ${car.isWinner ? 'winner-active' : ''}">
-                        ${car.isWinner ? '<div class="winner-badge">🏆 WINNER</div>' : ''}
+                    <div class="row ${winnerClass}">
+                        ${winLabel}
                         <div class="content">
                             <div class="rank">P${i+1}</div>
                             <div class="name ${color}">${car.house_name}</div>
@@ -199,7 +160,7 @@
                     </div>`;
             });
 
-            allCars.sort((a,b) => a.house_name.localeCompare(b.house_name)).forEach((car) => {
+            adminCars.forEach((car) => {
                 const color = getColorClass(car.house_name);
                 list.innerHTML += `
                     <div class="admin-row">
@@ -207,14 +168,11 @@
                             <span class="${color}"><b>${car.house_name}</b></span>
                             <span>L: <b>${car.laps}</b> | P: <b>${car.points}</b></span>
                         </div>
-                        <div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:center;">
-                            <button onclick="upd('${car.id}','laps',${car.laps+1})">+L</button>
-                            <button class="btn-neg" onclick="upd('${car.id}','laps',${car.laps-1})">-L</button>
-                            <button onclick="upd('${car.id}','points',${car.points+10})">+10P</button>
-                            <input type="text" placeholder="Key" style="width:60px" 
-                                   value="${car.shortcut || ''}" 
-                                   onchange="upd('${car.id}','shortcut',this.value.toUpperCase())">
-                            <button class="btn-win" onclick="win('${car.id}', '${car.house_name}')">🏆</button>
+                        <div class="admin-btns">
+                            <button onclick="upd('${car.id}','laps',${car.laps+1})">+ L</button>
+                            <button class="btn-neg" onclick="upd('${car.id}','laps',${car.laps-1})">- L</button>
+                            <button onclick="upd('${car.id}','points',${car.points+10})">+ 10</button>
+                            <button class="btn-win" onclick="win('${car.id}', '${car.house_name}')">🏆 WIN</button>
                             <button style="background:#b00" onclick="del('${car.id}')">DEL</button>
                         </div>
                     </div>`;
@@ -233,8 +191,7 @@
         window.del = (id) => confirm("Delete team?") && db.ref('scores/'+id).remove();
         window.addNewTeam = () => {
             const n = document.getElementById('newTeamName').value; if(!n) return;
-            const id = "t_"+Date.now(); 
-            db.ref('scores/'+id).set({id, house_name:n, laps:0, points:0, isWinner:false, shortcut:''});
+            const id = "t_"+Date.now(); db.ref('scores/'+id).set({id, house_name:n, laps:0, points:0, isWinner:false});
             document.getElementById('newTeamName').value='';
         };
         window.resetAll = () => {
