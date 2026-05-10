@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>F1 RC LIVE SCOREBOARD</title>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Roboto:wght@300;700&display=swap');
         :root { --f1-red: #e10600; --dark-bg: #15151e; --card-bg: #1f1f27; }
@@ -91,6 +90,8 @@
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyBuPWonFQJLRnym_OHDGl-0ZI74nLH518o",
@@ -131,7 +132,9 @@
             renderUI(s.val());
         }, (err) => {
             console.error("Firebase Listener Error:", err);
-            document.getElementById('leaderboard').innerHTML = `<p style="color: red;">Connection Error: ${err.message}</p>`;
+            let msg = err.message;
+            if (msg.includes("permission_denied")) msg = "PERMISSION DENIED: Please set your Firebase Database Rules to public (.read: true, .write: true)";
+            document.getElementById('leaderboard').innerHTML = `<p style="color: #ff4d4d; background: rgba(255,0,0,0.1); padding: 20px; border-radius: 8px;"><b>Connection Error:</b><br>${msg}</p>`;
         });
 
         function renderUI(data) {
@@ -154,7 +157,7 @@
                 return b.points !== a.points ? b.points - a.points : b.laps - a.laps;
             });
 
-            const adminCars = [...allCars].sort((a,b) => a.house_name.localeCompare(b.house_name));
+            const adminCars = [...allCars].sort((a,b) => (a.house_name || '').localeCompare(b.house_name || ''));
 
             sortedCars.forEach((car, i) => {
                 const color = getColorClass(car.house_name);
@@ -180,14 +183,14 @@
                 list.innerHTML += `
                     <div class="admin-row">
                         <div class="admin-info">
-                            <span class="${color}"><b>${car.house_name}</b></span>
-                            <span>L: <b>${car.laps}</b> | P: <b>${car.points}</b></span>
+                            <span class="${color}"><b>${car.house_name || 'Unnamed Team'}</b></span>
+                            <span>L: <b>${car.laps || 0}</b> | P: <b>${car.points || 0}</b></span>
                         </div>
                         <div class="admin-btns">
-                            <button onclick="upd('${car.id}','laps',${car.laps+1})">+ L</button>
-                            <button class="btn-neg" onclick="upd('${car.id}','laps',${car.laps-1})">- L</button>
-                            <button onclick="upd('${car.id}','points',${car.points+10})">+ 10</button>
-                            <button class="btn-win" onclick="win('${car.id}', '${car.house_name}')">🏆 WIN</button>
+                            <button onclick="upd('${car.id}','laps',${(car.laps || 0)+1})">+ L</button>
+                            <button class="btn-neg" onclick="upd('${car.id}','laps',${(car.laps || 0)-1})">- L</button>
+                            <button onclick="upd('${car.id}','points',${(car.points || 0)+10})">+ 10</button>
+                            <button class="btn-win" onclick="win('${car.id}', '${car.house_name || 'Unnamed'}')">🏆 WIN</button>
                             <button style="background:#b00" onclick="del('${car.id}')">DEL</button>
                         </div>
                     </div>`;
