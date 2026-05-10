@@ -119,6 +119,7 @@
         }
 
         function getColorClass(name) {
+            if (!name) return '';
             const n = name.toLowerCase();
             return n.includes('red')?'name-red':n.includes('blue')?'name-blue':n.includes('green')?'name-green':n.includes('yellow')?'name-yellow':'';
         }
@@ -151,10 +152,10 @@
                         ${winLabel}
                         <div class="content">
                             <div class="rank">P${i+1}</div>
-                            <div class="name ${color}">${car.house_name}</div>
+                            <div class="name ${color}">${car.house_name || 'Unnamed Team'}</div>
                             <div class="stat-group">
-                                <div class="stat-box"><span class="label">Laps</span><span class="value">${car.laps}</span></div>
-                                <div class="stat-box"><span class="label">Points</span><span class="value">${car.points}</span></div>
+                                <div class="stat-box"><span class="label">Laps</span><span class="value">${car.laps || 0}</span></div>
+                                <div class="stat-box"><span class="label">Points</span><span class="value">${car.points || 0}</span></div>
                             </div>
                         </div>
                     </div>`;
