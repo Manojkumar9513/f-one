@@ -103,8 +103,10 @@
             measurementId: "G-YNJ1YHV5RS"
         };
 
+        console.log("Initializing Firebase...");
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        console.log("Database initialized. Setting up listener...");
         let currentSort = 'both';
 
         function checkPassword() {
@@ -115,8 +117,7 @@
         function setSort(type) {
             currentSort = type;
             document.querySelectorAll('.sort-options button').forEach(b => b.classList.remove('btn-active'));
-            document.getElementById('sort-' + type).classList.add('btn-active');
-            db.ref('scores').once('value', s => renderUI(s.val()));
+            db.ref('scores').once('value', s => renderUI(s.val()), (err) => console.error("Sort Fetch Error:", err));
         }
 
         function getColorClass(name) {
@@ -125,12 +126,24 @@
             return n.includes('red')?'name-red':n.includes('blue')?'name-blue':n.includes('green')?'name-green':n.includes('yellow')?'name-yellow':'';
         }
 
-        db.ref('scores').on('value', (s) => renderUI(s.val()));
+        db.ref('scores').on('value', (s) => {
+            console.log("Data snapshot received.");
+            renderUI(s.val());
+        }, (err) => {
+            console.error("Firebase Listener Error:", err);
+            document.getElementById('leaderboard').innerHTML = `<p style="color: red;">Connection Error: ${err.message}</p>`;
+        });
 
         function renderUI(data) {
-            if (!data) return;
+            console.log("Firebase Data Received:", data);
             const board = document.getElementById('leaderboard');
             const list = document.getElementById('admin-list');
+            
+            if (!data) {
+                board.innerHTML = '<p style="color: #aaa; margin-top: 50px;">No teams found. Use the lock icon to add teams.</p>';
+                list.innerHTML = '<p style="color: #aaa; padding: 20px;">No teams in database.</p>';
+                return;
+            }
             board.innerHTML = ''; list.innerHTML = '';
 
             const allCars = Object.values(data);
