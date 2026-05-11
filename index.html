@@ -355,6 +355,9 @@
                         </div>
                     </div>`;
             });
+            } catch (e) {
+                console.error("Render Error:", e);
+            }
         }
 
         window.upd = (id, k, v) => db.ref('scores/'+id).update({[k]: v});
